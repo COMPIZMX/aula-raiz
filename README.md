@@ -24,7 +24,7 @@ It runs in any browser on any device: nothing to install, no account, light on d
 - **Lesson engine** — when a student creates a lesson, the app calls a small bridge (`worker/aula-api.js`, a Cloudflare Worker) that holds the API key server-side and asks **Muse Spark** (Meta Model API, `POST /v1/chat/completions`) for a structured lesson script: hook, three scenes, review card, review question, and a greeting in the student's language. The app renders the response with a "Generated live with Muse Spark" badge.
 - **Offline safety net** — the app ships with curated local lesson banks and templates. If the API is unreachable, lessons still generate locally, so a classroom demo never fails.
 - **Language mode** — phrase banks for Maya, Huichol (Wixárika), Nahuatl, Zapotec and English, with listen-aloud (English) and a self-test practice mode.
-- **Roadmap** — community-speaker review of the generated greetings and scripts before classroom use, and per-scene art (today each lesson gets one codex-style illustration from Muse Image).
+- **Roadmap** — pilot-phase classroom accounts: one link and QR code per class group, students join with name + 4-digit PIN (no email for minors), daily homework assigned from the lesson itself with turn-in tracking for the teacher; community-speaker review of the generated greetings and scripts before classroom use; and per-scene art (today each lesson gets one codex-style illustration from Muse Image).
 
 Everything in this repository was built during the hackathon (October 2026).
 
