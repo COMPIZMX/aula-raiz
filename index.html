@@ -73,6 +73,16 @@
     box-shadow:0 5px 0 #07271c, 0 9px 18px rgba(0,0,0,.3);
   }
   .btn-principal:active{transform:translateY(3px); box-shadow:0 2px 0 #07271c;}
+  .acciones-reel{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 4px;}
+  .btn-reel{background:var(--jade); color:#fff; border:none; border-radius:999px; padding:12px 20px; font-family:Verdana,sans-serif; font-weight:900; font-size:15px; cursor:pointer; box-shadow:0 3px 0 #07271c;}
+  .btn-reel:active{transform:translateY(2px); box-shadow:0 1px 0 #07271c;}
+  .btn-reel.secundario{background:#fff; color:var(--jade); border:2px solid var(--jade); box-shadow:none;}
+  .btn-reel[disabled]{opacity:.45; cursor:default;}
+  .escena.leyendo{border-color:var(--jade); box-shadow:0 0 0 3px rgba(201,162,39,.45);}
+  #videoSalida{margin-top:12px;}
+  #videoSalida video, #videoSalida canvas{width:270px; max-width:100%; border-radius:16px; background:#07271c; display:block;}
+  #videoSalida .estado{font-family:Verdana,sans-serif; font-size:14px; color:var(--jade2); margin:8px 0; font-weight:700;}
+  #videoSalida a.btn-reel{display:inline-block; text-decoration:none; margin-top:8px;}
   /* Resultado del reel */
 
   .reel-caja{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start;}
@@ -192,6 +202,12 @@
   <section id="resultado" class="tarjeta" style="display:none">
     <h2 id="resTitulo">Tu reel de lección</h2>
     <p class="ayuda" id="resMeta"></p>
+    <div class="acciones-reel">
+      <button type="button" class="btn-reel" id="btnEscuchar" onclick="escucharReel()">▶️ Escuchar el reel</button>
+      <button type="button" class="btn-reel" id="btnVideo" onclick="crearVideoReel()">🎬 Crear video del reel</button>
+      <button type="button" class="btn-reel secundario" id="btnDetener" onclick="detenerTodo()" style="display:none">⏹️ Detener</button>
+    </div>
+    <div id="videoSalida"></div>
     <div class="reel-caja">
       <div class="vista-reel" aria-hidden="true">
         <div class="vr-tema" id="vrTema">Tema</div>
@@ -536,6 +552,7 @@ function pintarDesdeAPI(j, nivel, idioma, auto){
          '<p class="visual">' + esc(e.visual) + "</p></article>";
   });
   document.getElementById("escenas").innerHTML = h;
+  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta };
 
   var bl = "";
   if (idioma === "Español"){
@@ -598,6 +615,7 @@ function generarLeccionLocal(auto){
          '<p class="visual">' + esc(e.visual) + "</p></article>";
   });
   document.getElementById("escenas").innerHTML = h;
+  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta };
 
   var bl = "";
   if (idioma === "Español"){
@@ -623,6 +641,199 @@ function generarLeccionLocal(auto){
   var res = document.getElementById("resultado");
   res.style.display = "";
   if (!auto) res.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function _btnsReel(ocupado){
+  var bE = document.getElementById("btnEscuchar"), bV = document.getElementById("btnVideo"), bD = document.getElementById("btnDetener");
+  if (bE) bE.disabled = ocupado;
+  if (bV) bV.disabled = ocupado;
+  if (bD) bD.style.display = ocupado ? "inline-block" : "none";
+}
+function _limpiarLeyendo(){
+  var arts = document.querySelectorAll("#escenas .escena");
+  for (var i = 0; i < arts.length; i++) arts[i].classList.remove("leyendo");
+}
+function detenerTodo(){
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
+  _limpiarLeyendo();
+  if (window._grabando) detenerGrabacion();
+  else _btnsReel(false);
+}
+function escucharReel(){
+  var datos = window._leccionActual;
+  if (!datos || !datos.escenas || !datos.escenas.length){ alert("Primero genera una lección y luego la escuchas."); return; }
+  if (!("speechSynthesis" in window)){ alert("Tu navegador no trae voz para narrar. Ábrelo en Chrome."); return; }
+  detenerTodo();
+  _btnsReel(true);
+  var arts = document.querySelectorAll("#escenas .escena");
+  datos.escenas.forEach(function(e, i){
+    var u = new SpeechSynthesisUtterance(e.texto);
+    u.lang = "es-MX"; u.rate = 1.0;
+    u.onstart = function(){
+      _limpiarLeyendo();
+      if (arts[i]){ arts[i].classList.add("leyendo"); arts[i].scrollIntoView({ behavior: "smooth", block: "center" }); }
+    };
+    if (i === datos.escenas.length - 1) u.onend = function(){ _limpiarLeyendo(); _btnsReel(false); };
+    speechSynthesis.speak(u);
+  });
+}
+function _envolver(ctx, texto, maxW){
+  var palabras = String(texto).split(/\s+/), lineas = [], actual = "";
+  palabras.forEach(function(p){
+    var prueba = actual ? actual + " " + p : p;
+    if (ctx.measureText(prueba).width <= maxW || !actual) actual = prueba;
+    else { lineas.push(actual); actual = p; }
+  });
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+function _dibujarReel(ctx, W, H, datos, t, total){
+  var fondo = ctx.createLinearGradient(0, 0, 0, H);
+  fondo.addColorStop(0, "#0d3b2a"); fondo.addColorStop(1, "#07271c");
+  ctx.fillStyle = fondo; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(201,162,39,.25)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(W - 90, 120, 150, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(60, H - 220, 110, 0, Math.PI * 2); ctx.stroke();
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#c9a227"; ctx.font = "900 30px Verdana, sans-serif";
+  ctx.fillText("🦅 AULA RAÍZ", W / 2, 84);
+  var segs = [{ tipo: "portada", dur: 3 }].concat(
+    datos.escenas.map(function(e, i){ return { tipo: "escena", dur: [5, 9, 5.5][i] || 6, e: e, idx: i }; })
+  ).concat([{ tipo: "cierre", dur: 3 }]);
+  var acc = 0, seg = segs[segs.length - 1], p = 1;
+  for (var s = 0; s < segs.length; s++){ if (t < acc + segs[s].dur){ seg = segs[s]; p = (t - acc) / segs[s].dur; break; } acc += segs[s].dur; }
+  ctx.save();
+  if (seg.tipo === "portada"){
+    ctx.globalAlpha = Math.min(1, p * 2.5);
+    ctx.fillStyle = "#f7f0dc"; ctx.font = "900 47px Verdana, sans-serif";
+    var lt = _envolver(ctx, datos.titulo, W - 120);
+    lt.forEach(function(l, i){ ctx.fillText(l, W / 2, 470 + i * 58); });
+    ctx.fillStyle = "#c9a227"; ctx.font = "700 27px Verdana, sans-serif";
+    ctx.fillText("Reel de lección · generado con Muse Spark", W / 2, 470 + lt.length * 58 + 56);
+  } else if (seg.tipo === "escena"){
+    ctx.fillStyle = "#c9a227";
+    if (ctx.roundRect){ ctx.beginPath(); ctx.roundRect(W / 2 - 210, 150, 420, 54, 27); ctx.fill(); }
+    ctx.fillStyle = "#07271c"; ctx.font = "900 25px Verdana, sans-serif";
+    ctx.fillText(seg.e.t.toUpperCase(), W / 2, 187);
+    ctx.fillStyle = "#f7f0dc"; ctx.font = "34px Georgia, serif"; ctx.textAlign = "left";
+    var lineas = _envolver(ctx, seg.e.texto, W - 130);
+    var visibles = Math.max(1, Math.ceil(lineas.length * Math.min(1, p * 1.6)));
+    for (var i = 0; i < visibles && i < lineas.length; i++) ctx.fillText(lineas[i], 65, 320 + i * 47);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(247,240,220,.75)"; ctx.font = "700 24px Verdana, sans-serif";
+    ctx.fillText("⏱️ " + seg.e.tiempo, W / 2, H - 130);
+  } else {
+    ctx.globalAlpha = Math.min(1, p * 2.5);
+    ctx.fillStyle = "#c9a227"; ctx.font = "900 32px Verdana, sans-serif";
+    ctx.fillText("❓ PREGUNTA DE REPASO", W / 2, 380);
+    ctx.fillStyle = "#f7f0dc"; ctx.font = "36px Georgia, serif";
+    var lp = _envolver(ctx, datos.pregunta || "", W - 120);
+    lp.forEach(function(l, i){ ctx.fillText(l, W / 2, 460 + i * 50); });
+  }
+  ctx.restore();
+  ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(0, H - 34, W, 10);
+  ctx.fillStyle = "#c9a227"; ctx.fillRect(0, H - 34, W * Math.min(1, t / total), 10);
+  ctx.fillStyle = "rgba(247,240,220,.8)"; ctx.font = "700 20px Verdana, sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("Aula Raíz · Compiz Tech Services", W / 2, H - 52);
+}
+function _crearMusica(actx){
+  var dest = actx.createMediaStreamDestination();
+  var master = actx.createGain(); master.gain.value = 0.16; master.connect(dest);
+  var acordes = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66], [164.81, 196, 246.94]];
+  var penta = [440, 523.25, 587.33, 659.25, 783.99];
+  var paso = 0, timers = [];
+  function pad(){
+    var ac = acordes[(paso >> 1) % acordes.length];
+    ac.forEach(function(f){
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "triangle"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.05, actx.currentTime + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 2.4);
+      o.connect(g); g.connect(master); o.start(); o.stop(actx.currentTime + 2.5);
+    });
+  }
+  function pluck(){
+    if (Math.random() < 0.85){
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "sine"; o.frequency.value = penta[Math.floor(Math.random() * penta.length)];
+      g.gain.setValueAtTime(0.0001, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.12, actx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.4);
+      o.connect(g); g.connect(master); o.start(); o.stop(actx.currentTime + 0.45);
+    }
+    paso++;
+  }
+  pad(); timers.push(setInterval(pad, 4000)); timers.push(setInterval(pluck, 500));
+  return { stream: dest.stream, timers: timers };
+}
+function crearVideoReel(){
+  var datos = window._leccionActual;
+  if (!datos || !datos.escenas || !datos.escenas.length){ alert("Primero genera una lección y luego creas su video."); return; }
+  if (window._grabando) return;
+  if (!("MediaRecorder" in window) || !HTMLCanvasElement.prototype.captureStream){
+    alert("Este navegador no deja grabar video aquí. Ábrelo en Chrome de Android — mientras tanto sí puedes usar Escuchar el reel.");
+    return;
+  }
+  detenerTodo();
+  var salida = document.getElementById("videoSalida");
+  var canvas = document.createElement("canvas");
+  canvas.width = 720; canvas.height = 1280;
+  salida.innerHTML = "";
+  var estado = document.createElement("p");
+  estado.className = "estado";
+  estado.textContent = "🔴 Grabando tu reel en vivo… déjalo correr hasta que termine (unos 25 segundos).";
+  salida.appendChild(estado); salida.appendChild(canvas);
+  canvas.scrollIntoView({ behavior: "smooth", block: "center" });
+  var ctx = canvas.getContext("2d");
+  var stream = canvas.captureStream(30);
+  var musica = null, actx = null;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC){ actx = new AC(); musica = _crearMusica(actx); musica.stream.getAudioTracks().forEach(function(tr){ stream.addTrack(tr); }); }
+  } catch(e){}
+  var mime = "";
+  ["video/mp4", "video/webm;codecs=vp9,opus", "video/webm"].forEach(function(m){ if (!mime && MediaRecorder.isTypeSupported(m)) mime = m; });
+  var rec;
+  try { rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4000000 } : { videoBitsPerSecond: 4000000 }); }
+  catch(e){ estado.textContent = "Este navegador no pudo grabar el video. Usa Escuchar el reel."; return; }
+  window._grabando = true; _btnsReel(true);
+  var chunks = [];
+  rec.ondataavailable = function(ev){ if (ev.data && ev.data.size) chunks.push(ev.data); };
+  var total = 3 + 5 + 9 + 5.5 + 3;
+  var inicio = null;
+  function marco(ts){
+    if (!window._grabando) return;
+    if (inicio === null) inicio = ts;
+    var t = (ts - inicio) / 1000;
+    _dibujarReel(ctx, 720, 1280, { titulo: datos.titulo, escenas: datos.escenas, pregunta: datos.pregunta || "" }, t, total);
+    if (t < total) requestAnimationFrame(marco);
+    else detenerGrabacion();
+  }
+  window._recActual = rec; window._chunksActual = chunks; window._musicaActual = musica; window._actxActual = actx; window._mimeActual = mime;
+  rec.onstop = function(){ _finalizarVideo(); };
+  rec.start(250);
+  requestAnimationFrame(marco);
+}
+function detenerGrabacion(){
+  if (!window._grabando) return;
+  window._grabando = false;
+  if (window._musicaActual) window._musicaActual.timers.forEach(function(id){ clearInterval(id); });
+  try { if (window._recActual && window._recActual.state !== "inactive") window._recActual.stop(); } catch(e){ _btnsReel(false); }
+  try { if (window._actxActual) window._actxActual.close(); } catch(e){}
+}
+function _finalizarVideo(){
+  _btnsReel(false);
+  var mime = window._mimeActual || "video/webm";
+  var blob = new Blob(window._chunksActual || [], { type: mime });
+  if (!blob.size) return;
+  var url = URL.createObjectURL(blob);
+  var ext = mime.indexOf("mp4") >= 0 ? "mp4" : "webm";
+  var salida = document.getElementById("videoSalida");
+  salida.innerHTML = '<p class="estado">✅ ¡Tu reel está listo! Míralo aquí y descárgalo pa\' compartirlo.</p>' +
+    '<video controls playsinline src="' + url + '"></video>' +
+    '<a class="btn-reel" href="' + url + '" download="aula-raiz-reel.' + ext + '">⬇️ Descargar el video</a>';
+  salida.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 function escucharFrase(i){
   var L = LECCIONES[window._idiomaActual || "Inglés"];
