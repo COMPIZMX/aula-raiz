@@ -4,7 +4,7 @@
 
 Aula Raíz turns any lesson into a short, epic reel students actually remember: an original script, vivid Aztec-inspired scenes, narration, and original music, generated in minutes — in Spanish and in the languages students speak at home, like Maya, Huichol (Wixárika), Nahuatl, and Zapotec. It also includes a language-learning option: the same format turns words, phrases, and pronunciation into short lessons for learning Maya, Huichol, Nahuatl, Zapotec, English, or whichever language the student chooses.
 
-Built with Meta's models — Muse Spark for lesson scripting and leveling, Muse Image for scene art — and based on the pipeline behind the *Historia de México* daily reel series, Aula Raíz puts learning in the hands of teachers and students, making it simpler and far more memorable.
+Built on Meta's models — lesson scripts are generated live by Muse Spark through the Meta Model API — and based on the pipeline behind the *Historia de México* daily reel series, Aula Raíz puts learning in the hands of teachers and students, making it simpler and far more memorable.
 
 ## The problem
 
@@ -20,7 +20,13 @@ It runs in any browser on any device: nothing to install, no account, light on d
 
 ## Tech
 
-A single-file web app (`index.html`) — lightweight by design, so it works on the phones and connections real families have. Lesson generation is powered by Meta's models via the Meta Model API (Muse Spark, Muse Image); submissions to this repository reflect the hackathon build.
+- **Web app** (`index.html`) — a single-file app, lightweight by design, so it works on the phones and connections real families have. No install, no account.
+- **Lesson engine** — when a student creates a lesson, the app calls a small bridge (`worker/aula-api.js`, a Cloudflare Worker) that holds the API key server-side and asks **Muse Spark** (Meta Model API, `POST /v1/chat/completions`) for a structured lesson script: hook, three scenes, review card, review question, and a greeting in the student's language. The app renders the response with a "Generated live with Muse Spark" badge.
+- **Offline safety net** — the app ships with curated local lesson banks and templates. If the API is unreachable, lessons still generate locally, so a classroom demo never fails.
+- **Language mode** — phrase banks for Maya, Huichol (Wixárika), Nahuatl, Zapotec and English, with listen-aloud (English) and a self-test practice mode.
+- **Roadmap** — scene art generated with Muse Image, and community-speaker review of the generated greetings and scripts before classroom use.
+
+Everything in this repository was built during the hackathon (October 2026).
 
 ## Submission
 

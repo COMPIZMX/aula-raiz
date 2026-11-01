@@ -461,7 +461,105 @@ function plantilla(tema, nivel){
     ]
   };
 }
+var API_LECCION = "https://aula-api.compizmx.com/leccion";
+var _genEnCurso = false;
 function generarLeccion(auto){
+  if (_genEnCurso) return;
+  var tema = document.getElementById("tema").value.replace(/^\s+|\s+$/g, "");
+  var nivel = document.getElementById("nivel").value;
+  var idioma = document.getElementById("idiomaLeccion").value;
+  if (!tema){
+    alert("Escribe primero el tema o la materia de la lección, compa. Puede ser algo como: Los volcanes.");
+    document.getElementById("tema").focus();
+    return;
+  }
+  _genEnCurso = true;
+  var res = document.getElementById("resultado");
+  document.getElementById("resTitulo").textContent = "⏳ Generando tu lección con Muse Spark…";
+  document.getElementById("resMeta").textContent = "Conectando con la Meta Model API. Esto tarda unos segundos.";
+  document.getElementById("escenas").innerHTML = "";
+  document.getElementById("bloqueLengua").innerHTML = "";
+  document.getElementById("repaso").innerHTML = "";
+  res.style.display = "block";
+  if (!auto) res.scrollIntoView({ behavior: "smooth", block: "start" });
+  var ctrl = ("AbortController" in window) ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 25000) : null;
+  fetch(API_LECCION, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tema: tema, nivel: nivel, idioma: idioma }),
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function(r){
+    if (timer) clearTimeout(timer);
+    if (!r.ok) throw new Error("api " + r.status);
+    return r.json();
+  }).then(function(j){
+    _genEnCurso = false;
+    pintarDesdeAPI(j, nivel, idioma, auto);
+  }).catch(function(e){
+    if (timer) clearTimeout(timer);
+    _genEnCurso = false;
+    generarLeccionLocal(auto);
+  });
+}
+function pintarDesdeAPI(j, nivel, idioma, auto){
+  var L = {
+    titulo: j.titulo,
+    gancho: j.gancho,
+    desarrollo: j.escenas[1].texto,
+    cierre: j.escenas[2].texto,
+    pregunta: j.pregunta,
+    puntos: j.repaso,
+    visual: [
+      "🖼️ En pantalla: " + j.escenas[0].visual,
+      "🖼️ En pantalla: " + j.escenas[1].visual,
+      "🖼️ En pantalla: " + j.escenas[2].visual
+    ]
+  };
+  document.getElementById("resTitulo").textContent = "🎞️ Tu reel: " + L.titulo;
+  document.getElementById("resMeta").textContent =
+    "Nivel: " + (nivel === "primaria" ? "Primaria" : "Secundaria") +
+    " · Idioma de la lección: " + idioma +
+    " · Duración aprox.: 45 segundos · 3 escenas" +
+    " · ✨ Generada en vivo con Muse Spark — Meta Model API";
+  document.getElementById("vrTema").textContent = L.titulo;
+
+  var escenas = [
+    { n: "Escena 1", t: "🎯 El gancho", tiempo: "0:00 – 0:07", texto: L.gancho, visual: L.visual[0] },
+    { n: "Escena 2", t: "📖 El desarrollo", tiempo: "0:07 – 0:35", texto: L.desarrollo, visual: L.visual[1] },
+    { n: "Escena 3", t: "🔥 Cierre y pregunta de repaso", tiempo: "0:35 – 0:45", texto: L.cierre + " Y ahora, a pensar: " + L.pregunta, visual: L.visual[2] }
+  ];
+  var h = "";
+  escenas.forEach(function(e){
+    h += '<article class="escena"><div class="cab"><span class="num">' + e.n + '</span><h3>' + e.t + '</h3><span class="tiempo">⏱️ ' + e.tiempo + '</span></div>' +
+         "<p>“" + esc(e.texto) + "”</p>" +
+         '<p class="visual">' + esc(e.visual) + "</p></article>";
+  });
+  document.getElementById("escenas").innerHTML = h;
+
+  var bl = "";
+  if (idioma === "Español"){
+    bl = '<div class="muestra"><span class="frase">Guion completo en español</span>' +
+         "<small>Listo para narrarse tal cual, escena por escena, con voz clara y sin prisas.</small></div>";
+  } else {
+    bl = '<div class="muestra"><small style="margin:0 0 4px;font-weight:900;letter-spacing:.5px;">SALUDO EN ' + esc(idioma.toUpperCase()) + ' — GENERADO POR MUSE SPARK</small>' +
+         '<span class="frase">“' + esc(j.saludo) + '"</span>' +
+         "<small>Saludo y frase de ánimo en la lengua del estudiante, generados en vivo por Muse Spark. El guion completo va arriba, en español, listo para grabarse también en esta lengua con apoyo de hablantes de la comunidad.</small></div>";
+  }
+  document.getElementById("bloqueLengua").innerHTML = bl;
+
+  var rp = "<h3>🎴 Tarjeta de repaso — lo que sí te tienes que llevar</h3><ul>";
+  L.puntos.forEach(function(p){ rp += "<li>" + esc(p) + "</li>"; });
+  rp += '</ul><div class="pregunta">❓ <strong>Pregunta de repaso:</strong> ' + esc(L.pregunta) + "</div>";
+  document.getElementById("repaso").innerHTML = rp;
+
+  window._reelListo = true;
+  var res = document.getElementById("resultado");
+  res.style.display = "";
+  if (!auto) res.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function generarLeccionLocal(auto){
+
   var tema = document.getElementById("tema").value.replace(/^\s+|\s+$/g, "");
   var nivel = document.getElementById("nivel").value;
   var idioma = document.getElementById("idiomaLeccion").value;
