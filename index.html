@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula Raíz — Educación en reels, en la lengua del estudiante</title>
+<style>
+  :root{
+    --jade:#0b3d2e; --jade2:#14532d; --jade3:#1d6a43;
+    --oro:#c9a227; --oro2:#e8c766; --obsidiana:#16130c;
+    --crema:#fff8e7; --papel:#fdf6de; --tinta:#221d10;
+    --suave:#6b6249; --borde:#e3d5a8; --rojo:#b3402a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:Georgia,'Times New Roman',serif;
+    background:
+      radial-gradient(900px 480px at 85% -80px, rgba(201,162,39,.20), transparent 60%),
+      radial-gradient(700px 500px at -10% 30%, rgba(29,106,67,.35), transparent 60%),
+      linear-gradient(180deg,#0e2f23 0%, #0b3d2e 240px, #123527 100%);
+    color:var(--tinta); min-height:100vh; overflow-x:hidden;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:18px 16px 40px; position:relative; z-index:1;}
+  /* Banda de grecas */
+  .greca{height:16px; border-radius:3px; opacity:.9;
+    background:
+      linear-gradient(45deg, transparent 33.333%, var(--oro) 33.333%, var(--oro) 66.667%, transparent 66.667%),
+      linear-gradient(-45deg, transparent 33.333%, var(--oro) 33.333%, var(--oro) 66.667%, transparent 66.667%);
+    background-size:18px 18px; background-position:0 0, 9px 9px;}
+  .greca.fina{height:9px; background-size:11px 11px; opacity:.65;}
+  header{text-align:center; padding:22px 6px 6px; color:var(--crema);}
+  .aguila{font-size:52px; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));}
+  header h1{
+    font-size:clamp(30px,6.4vw,46px); letter-spacing:1px; margin-top:6px;
+    color:var(--oro2); text-transform:uppercase; font-weight:900;
+    text-shadow:0 2px 0 rgba(0,0,0,.35);
+  }
+  header .lema{font-size:clamp(16px,3.6vw,20px); margin-top:8px; color:#f3e9c8; font-style:italic;}
+  header .sub{margin-top:8px; font-size:14.5px; color:#cfdeb9; font-family:Verdana,sans-serif;}
+  /* Pestañas de modos */
+  .modos{display:flex; flex-wrap:wrap; gap:10px; margin:22px 0 16px;}
+  .modos button{
+    flex:1 1 220px; cursor:pointer; border:2px solid var(--oro); border-radius:14px;
+    padding:14px 10px; font-size:17px; font-weight:800; font-family:Verdana,sans-serif;
+    background:rgba(255,248,231,.08); color:var(--crema); transition:.15s;
+  }
+  .modos button.activo{background:var(--oro); color:var(--obsidiana); box-shadow:0 4px 14px rgba(0,0,0,.35);}
+  .tarjeta{
+    background:var(--papel); border:2px solid var(--borde); border-radius:18px;
+    padding:20px 18px 22px; box-shadow:0 10px 28px rgba(0,0,0,.35); margin-bottom:18px;
+  }
+  .tarjeta h2{color:var(--jade); font-size:23px; margin-bottom:6px;}
+  .tarjeta .ayuda{color:var(--suave); font-size:14.5px; font-family:Verdana,sans-serif; margin-bottom:14px; line-height:1.45;}
+  label{display:block; font-weight:800; font-family:Verdana,sans-serif; font-size:13px; letter-spacing:.4px; color:var(--jade); margin:14px 0 6px; text-transform:uppercase;}
+  input[type=text], select{
+    width:100%; max-width:100%; padding:12px; font-size:16.5px; border:2px solid var(--borde);
+    border-radius:11px; background:#fff; color:var(--tinta); font-family:Verdana,sans-serif;
+  }
+  input[type=text]:focus, select:focus{outline:3px solid rgba(201,162,39,.45); border-color:var(--oro);}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:9px;}
+  .chips button{
+    cursor:pointer; border:2px solid var(--jade3); color:var(--jade); background:#eef5e6;
+    border-radius:999px; padding:8px 13px; font-size:14px; font-weight:700; font-family:Verdana,sans-serif;
+  }
+  .chips button:active{transform:scale(.97);}
+  .doscol{display:flex; flex-wrap:wrap; gap:14px;}
+  .doscol > div{flex:1 1 210px; min-width:0;}
+  .btn-principal{
+    margin-top:20px; width:100%; cursor:pointer; border:none; border-radius:13px;
+    background:linear-gradient(180deg,var(--jade3),var(--jade2)); color:#fff;
+    font-size:18px; font-weight:900; font-family:Verdana,sans-serif; padding:15px;
+    box-shadow:0 5px 0 #07271c, 0 9px 18px rgba(0,0,0,.3);
+  }
+  .btn-principal:active{transform:translateY(3px); box-shadow:0 2px 0 #07271c;}
+  /* Resultado del reel */
+
+  .reel-caja{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start;}
+  .vista-reel{
+    flex:0 1 240px; margin:0 auto; width:100%; max-width:250px; aspect-ratio:9/14;
+    border-radius:18px; position:relative; overflow:hidden; color:#fff; text-align:center;
+    background:
+      radial-gradient(220px 160px at 50% 18%, rgba(232,199,102,.55), transparent 65%),
+      linear-gradient(180deg,#274e13 0%, #14532d 45%, #3d2c14 100%);
+    border:3px solid var(--oro); box-shadow:0 10px 22px rgba(0,0,0,.4);
+    display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px;
+  }
+  .vista-reel .vr-tema{font-weight:900; font-size:19px; line-height:1.25; text-shadow:0 2px 5px rgba(0,0,0,.6);}
+  .vista-reel .vr-play{font-size:52px; text-shadow:0 3px 10px rgba(0,0,0,.55);}
+  .vista-reel .vr-pie{font-family:Verdana,sans-serif; font-size:12px; opacity:.95;}
+  .vista-reel .vr-barra{height:6px; background:rgba(255,255,255,.3); border-radius:99px; overflow:hidden; margin-top:7px;}
+  .vista-reel .vr-barra i{display:block; height:100%; width:34%; background:var(--oro2);}
+  .escenas{flex:1 1 320px; min-width:0;}
+  .escena{background:#fff; border:2px solid var(--borde); border-left:8px solid var(--oro); border-radius:13px; padding:13px 14px; margin-bottom:12px;}
+  .escena .cab{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;}
+  .escena .num{background:var(--jade); color:#fff; font-family:Verdana,sans-serif; font-weight:900; font-size:12.5px; border-radius:999px; padding:4px 11px;}
+  .escena .tiempo{font-family:Verdana,sans-serif; font-size:12.5px; color:var(--suave); font-weight:700;}
+  .escena h3{color:var(--jade2); font-size:17.5px;}
+  .escena p{line-height:1.55; font-size:16px; margin-top:3px;}
+  .escena .visual{margin-top:8px; font-size:13.5px; font-family:Verdana,sans-serif; color:var(--suave); background:#f7efcf; border-radius:8px; padding:7px 9px;}
+  .muestra{background:#eef5e6; border:2px dashed var(--jade3); border-radius:13px; padding:13px 14px; margin:4px 0 12px;}
+  .muestra .frase{font-size:21px; font-weight:900; color:var(--jade);}
+  .muestra small{font-family:Verdana,sans-serif; color:var(--suave); display:block; margin-top:3px; line-height:1.45;}
+  .nota-lengua{background:#fdf0e2; border:2px dashed #d19a3a; border-radius:13px; padding:12px 14px; margin:4px 0 12px; font-size:15px; line-height:1.5;}
+  .repaso{background:var(--jade); color:var(--crema); border-radius:15px; padding:16px 16px 13px; margin-top:4px;}
+  .repaso h3{color:var(--oro2); font-size:18.5px; margin-bottom:9px;}
+  .repaso ul{margin-left:20px; line-height:1.6; font-size:15.5px;}
+  .repaso .pregunta{margin-top:11px; background:rgba(255,248,231,.12); border:1.5px solid var(--oro); border-radius:10px; padding:10px 12px; font-size:16px; line-height:1.5;}
+  /* Aprender idioma */
+  .practicar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:14px; background:#eef5e6; border:2px solid var(--borde); border-radius:12px; padding:11px 13px; font-family:Verdana,sans-serif; font-size:14.5px; font-weight:700; color:var(--jade);}
+  .practicar input{width:22px; height:22px; accent-color:var(--jade2);}
+  .frases{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:14px;}
+  .frase-card{background:#fff; border:2px solid var(--borde); border-top:7px solid var(--oro); border-radius:13px; padding:13px 13px 11px;}
+  .frase-card .cat{font-family:Verdana,sans-serif; font-size:11.5px; font-weight:900; letter-spacing:.6px; color:var(--suave); text-transform:uppercase;}
+  .frase-card .f{font-size:20px; font-weight:900; color:var(--jade); margin:5px 0 3px; line-height:1.3; overflow-wrap:break-word;}
+  .frase-card .t{font-size:15.5px; line-height:1.4;}
+  .btn-oir{margin-top:9px; background:var(--jade); color:#fff; border:none; border-radius:9px; padding:8px 13px; font-family:Verdana,sans-serif; font-size:13.5px; font-weight:800; cursor:pointer;}
+  .btn-oir:active{transform:scale(.97);}
+  .frase-card .p{font-family:Verdana,sans-serif; font-size:12.5px; color:var(--suave); margin-top:6px; line-height:1.45;}
+  body.practicando .traducible{opacity:0; }
+  body.practicando .frase-card{border-top-color:var(--jade3);}
+  .aviso-practica{display:none; margin-top:10px; font-family:Verdana,sans-serif; font-size:13.5px; color:var(--jade); font-weight:700;}
+  body.practicando .aviso-practica{display:block;}
+  footer{text-align:center; color:#d9dfc2; font-family:Verdana,sans-serif; font-size:13px; padding:10px 8px 4px; line-height:1.7;}
+  footer .cop{color:var(--oro2); font-weight:700;}
+  .marca-jp{
+    position:fixed; right:-14px; bottom:8vh; transform:rotate(-24deg); z-index:0;
+    font-family:Georgia,serif; font-weight:900; font-size:120px; color:#ffffff;
+    opacity:.05; pointer-events:none; user-select:none; background:none;
+  }
+  @media (max-width:520px){
+    .wrap{padding:14px 12px 34px;}
+    .tarjeta{padding:16px 13px 18px;}
+    .modos button{flex:1 1 100%;}
+    .vista-reel{max-width:230px;}
+  }
+</style>
+</head>
+<body>
+<div class="marca-jp" aria-hidden="true">JP</div>
+<div class="wrap">
+
+  <header>
+    <div class="greca"></div>
+    <div class="aguila" aria-hidden="true">🦅</div>
+    <h1>Aula Raíz</h1>
+    <p class="lema">Educación en reels, en la lengua del estudiante.</p>
+    <p class="sub">Lecciones cortas y épicas que sí se quedan en la memoria: un tema, tres escenas y a aprender. 🪶</p>
+    <div class="greca fina" style="margin-top:14px"></div>
+  </header>
+
+  <nav class="modos" aria-label="Modos">
+    <button type="button" id="btnModoA" class="activo" onclick="cambiarModo('a')">🎬 Crear una lección</button>
+    <button type="button" id="btnModoB" onclick="cambiarModo('b')">🗣️ Aprender un idioma</button>
+  </nav>
+
+  <section id="modoA" class="tarjeta">
+    <h2>🎬 Crear una lección</h2>
+    <p class="ayuda">Escribe el tema de la clase, elige el nivel y la lengua de tus estudiantes. Al instante tienes el guion del reel, escena por escena, con su tarjeta de repaso.</p>
+
+    <label for="tema">Tema o materia</label>
+    <input type="text" id="tema" placeholder="Ejemplo: Los volcanes" value="Los volcanes" autocomplete="off">
+    <div class="chips" id="chips"></div>
+
+    <div class="doscol">
+      <div>
+        <label for="nivel">Nivel</label>
+        <select id="nivel">
+          <option value="primaria">Primaria</option>
+          <option value="secundaria">Secundaria</option>
+        </select>
+      </div>
+      <div>
+        <label for="idiomaLeccion">Idioma de la lección</label>
+        <select id="idiomaLeccion">
+          <option>Español</option>
+          <option>Náhuatl</option>
+          <option>Maya</option>
+          <option>Huichol (Wixárika)</option>
+          <option>Zapoteco</option>
+          <option>Mixteco</option>
+          <option>Otomí</option>
+          <option>Purépecha</option>
+          <option>Totonaco</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="button" class="btn-principal" onclick="generarLeccion()">✨ Generar reel de lección</button>
+  </section>
+
+  <section id="resultado" class="tarjeta" style="display:none">
+    <h2 id="resTitulo">Tu reel de lección</h2>
+    <p class="ayuda" id="resMeta"></p>
+    <div class="reel-caja">
+      <div class="vista-reel" aria-hidden="true">
+        <div class="vr-tema" id="vrTema">Tema</div>
+        <div>
+          <div class="vr-play">▶️</div>
+          <div class="vr-pie">Reel vertical · 45 segundos</div>
+          <div class="vr-barra"><i></i></div>
+        </div>
+        <div class="vr-pie">🦅 Aula Raíz</div>
+      </div>
+      <div class="escenas" id="escenas"></div>
+    </div>
+    <div id="bloqueLengua"></div>
+    <div class="repaso" id="repaso"></div>
+  </section>
+
+  <section id="modoB" class="tarjeta" style="display:none">
+    <h2>🗣️ Aprender un idioma</h2>
+    <p class="ayuda">Mini lecciones con las frases de todos los días: saludos, gracias, los primeros números y la despedida. Poquitas, pero bien dichas, como las habla la gente.</p>
+
+    <label for="idiomaAprender">Idioma que quieres aprender</label>
+    <select id="idiomaAprender">
+      <option>Maya</option>
+      <option>Huichol (Wixárika)</option>
+      <option>Náhuatl</option>
+      <option>Zapoteco</option>
+      <option>Inglés</option>
+    </select>
+
+    <label class="practicar" for="chkPracticar">
+      <input type="checkbox" id="chkPracticar" onchange="document.body.classList.toggle('practicando', this.checked)">
+      <span>🙈 Modo practicar: esconde las traducciones y ponte a prueba</span>
+    </label>
+    <p class="aviso-practica">Traducciones escondidas. Di cada frase en voz alta y luego apaga el modo practicar para comprobar.</p>
+
+    <button type="button" class="btn-principal" onclick="generarIdioma()">📚 Ver mini lección</button>
+
+    <div id="salidaIdioma"></div>
+  </section>
+
+  <footer>
+    <div class="greca fina" style="margin-bottom:12px"></div>
+    <p>Hecho para maestros y estudiantes de México y de dondequiera que se hable con el corazón. 🌽</p>
+    <p class="cop">© Jaime Porras-Gomez · Compiz Tech Services — All rights reserved</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* Banco de lecciones: guiones originales, sencillos y correctos */
+var BANCO = {
+  "revolucion": {
+    titulo: "La Revolución Mexicana",
+    gancho: "¿Sabías que la Revolución no empezó con un ejército, sino con un llamado a votar? En 1910, Francisco I. Madero llamó al pueblo a levantarse el 20 de noviembre, y México cambió para siempre.",
+    desarrollo: {
+      primaria: "La gente estaba cansada: unos pocos tenían casi toda la tierra y las tiendas de raya pagaban con fichas que solo servían en la misma tienda. Por eso se levantaron líderes como Emiliano Zapata, en el sur, que pedía tierra y libertad, y Pancho Villa, en el norte. Después de años de lucha, en 1917 nació una Constitución nueva, con derechos para los trabajadores y escuela para todos.",
+      secundaria: "Las causas fueron profundas: en la dictadura de Porfirio Díaz la tierra se concentró en pocas manos y las haciendas pagaban en tiendas de raya. Madero exigió democracia con su lema: sufragio efectivo, no reelección. Al caer el régimen, el país vivió una lucha entre caudillos: Zapata defendió el reparto de tierra con el Plan de Ayala y Villa encabezó la División del Norte. El cierre llegó con la Constitución de 1917, que reconoció derechos laborales, la tierra como propiedad social y la educación laica y gratuita."
+    },
+    cierre: "La Revolución nos dejó una idea poderosa: los derechos no se regalan, se escriben y se defienden. Por eso la Constitución de 1917 sigue viva en tu escuela y en tu comunidad.",
+    pregunta: {
+      primaria: "¿Qué pedía Zapata para los campesinos?",
+      secundaria: "¿Qué Constitución nació de la Revolución y qué derechos reconoció?"
+    },
+    puntos: [
+      "Todo empezó en 1910 con el llamado de Madero: sufragio efectivo, no reelección.",
+      "Zapata luchó por la tierra en el sur; Villa encabezó la lucha en el norte.",
+      "La Constitución de 1917 convirtió las demandas en derechos para todos."
+    ],
+    visual: [
+      "🖼️ En pantalla: un calendario antiguo marca el 20 de noviembre de 1910 y un pueblo se reúne en la plaza.",
+      "🖼️ En pantalla: mapa de México; el sur se ilumina con Zapata y el norte con Villa.",
+      "🖼️ En pantalla: un libro grande se abre, la Constitución, y niños entran a una escuela."
+    ]
+  },
+  "fracciones": {
+    titulo: "Las fracciones",
+    gancho: "¿Sabías que una pizza te puede explicar las fracciones en diez segundos? Si la partes en cuatro pedazos iguales y te comes uno, ya sabes lo que es un cuarto.",
+    desarrollo: {
+      primaria: "Una fracción es una parte de un todo partido en pedazos iguales. El número de abajo se llama denominador y dice en cuántos pedazos partiste el todo. El número de arriba es el numerador y dice cuántos pedazos tomaste. Si partes la pizza en 4 y tomas 1 pedazo, tienes 1/4, un cuarto. Si tomas 2 pedazos iguales, tienes 2/4, la mitad de la pizza.",
+      secundaria: "Una fracción representa una división: el numerador indica cuántas partes tomas y el denominador, en cuántas partes iguales se divide el todo. Para sumar fracciones con el mismo denominador, sumas los numeradores y el denominador no cambia: 1/4 más 2/4 son 3/4. Si los denominadores son distintos, primero hay que convertirlas a un denominador común, es decir, a pedazos del mismo tamaño. Esa idea, igualar el tamaño de las partes, es la llave de casi todo el tema."
+    },
+    cierre: "Truco para no olvidarlo nunca: abajo manda el tamaño del pedazo y arriba cuentas los pedazos. Con eso claro, las fracciones dejan de dar miedo.",
+    pregunta: {
+      primaria: "Si partes un pastel en 8 pedazos iguales y te comes 3, ¿qué fracción te comiste?",
+      secundaria: "¿Cuánto es 1/4 más 2/4, y por qué el denominador no cambia al sumar?"
+    },
+    puntos: [
+      "El denominador dice en cuántas partes iguales se divide el todo.",
+      "El numerador dice cuántas de esas partes tomaste.",
+      "Abajo manda el tamaño del pedazo; arriba cuentas los pedazos."
+    ],
+    visual: [
+      "🖼️ En pantalla: una pizza completa se parte en cuatro y un pedazo se levanta.",
+      "🖼️ En pantalla: los números 1 y 4 aparecen grandes, arriba y abajo de una raya.",
+      "🖼️ En pantalla: un pastel partido en 8 con 3 pedazos marcados de color dorado."
+    ]
+  },
+  "ciclo del agua": {
+    titulo: "El ciclo del agua",
+    gancho: "¿Sabías que el agua que tomas hoy pudo haberla bebido un dinosaurio? El agua de la Tierra no se crea ni se destruye: viaja en un ciclo que nunca se detiene.",
+    desarrollo: {
+      primaria: "El Sol calienta el agua de los mares y los ríos y la convierte en vapor: eso es la evaporación. El vapor sube, se enfría y se junta en gotitas que forman las nubes: eso es la condensación. Cuando las gotitas pesan mucho, caen como lluvia, nieve o granizo: es la precipitación. El agua se recoge en ríos, lagos y bajo la tierra, y el ciclo vuelve a empezar.",
+      secundaria: "El ciclo tiene cuatro momentos clave. Primero, la evaporación: el Sol aporta la energía y el agua de mares, ríos y suelos pasa a vapor; las plantas también sueltan vapor por sus hojas, en la transpiración. Segundo, la condensación: el vapor se enfría en la altura y forma las nubes. Tercero, la precipitación: el agua cae como lluvia, nieve o granizo. Y cuarto, la acumulación: el agua se guarda en océanos, lagos, ríos y mantos subterráneos, desde donde todo vuelve a comenzar."
+    },
+    cierre: "Por eso cuidar el agua es cuidar el ciclo completo: la lluvia que hoy cae en tu comunidad mañana será nube otra vez.",
+    pregunta: {
+      primaria: "¿Cómo se llama el paso en el que el agua se convierte en vapor?",
+      secundaria: "¿Qué papel juega el Sol en el ciclo del agua y qué pasaría si faltara su energía?"
+    },
+    puntos: [
+      "Evaporación: el agua sube como vapor gracias al calor del Sol.",
+      "Condensación: el vapor se enfría y forma las nubes.",
+      "Precipitación: el agua cae como lluvia y el ciclo se repite."
+    ],
+    visual: [
+      "🖼️ En pantalla: el Sol brilla sobre el mar y suben ondas de vapor.",
+      "🖼️ En pantalla: el vapor se junta en una nube grande sobre las montañas.",
+      "🖼️ En pantalla: cae la lluvia sobre un río y el agua corre de regreso al mar."
+    ]
+  },
+  "fotosintesis": {
+    titulo: "La fotosíntesis",
+    gancho: "¿Sabías que las plantas cocinan su propia comida con la luz del Sol? Y de pasada fabrican el oxígeno que estás respirando ahorita mismo.",
+    desarrollo: {
+      primaria: "Las hojas atrapan la luz del Sol con un pigmento verde llamado clorofila, el que les da su color. Con esa energía, la planta mezcla el agua que sube por sus raíces y un gas del aire, el dióxido de carbono, y así produce su alimento, un azúcar que la hace crecer. Al terminar, la planta suelta oxígeno al aire, el mismo que respiramos las personas y los animales.",
+      secundaria: "La fotosíntesis sucede dentro de los cloroplastos de las células de las hojas, gracias al pigmento verde llamado clorofila. La planta toma agua por las raíces y dióxido de carbono del aire, y con la energía de la luz solar los transforma en glucosa, su alimento, liberando oxígeno como producto. En corto: agua más dióxido de carbono, con luz, producen alimento y oxígeno. De este proceso depende casi toda la vida de la Tierra."
+    },
+    cierre: "Cada hoja verde es una fábrica silenciosa: entra la luz del Sol y salen alimento para la planta y oxígeno para todos.",
+    pregunta: {
+      primaria: "¿Qué suelta la planta al aire cuando hace la fotosíntesis?",
+      secundaria: "¿Qué necesita la planta para hacer la fotosíntesis y qué dos cosas produce?"
+    },
+    puntos: [
+      "La clorofila, el pigmento verde de las hojas, atrapa la luz del Sol.",
+      "La planta usa agua y dióxido de carbono para fabricar su alimento.",
+      "El oxígeno que respiramos sale de la fotosíntesis."
+    ],
+    visual: [
+      "🖼️ En pantalla: un rayo de sol cae sobre una hoja verde que brilla.",
+      "🖼️ En pantalla: flechas muestran agua subiendo por la raíz y aire entrando a la hoja.",
+      "🖼️ En pantalla: burbujas de oxígeno suben desde la planta hacia el cielo."
+    ]
+  }
+};
+var CHIPS = [
+  { texto: "🇲🇽 La Revolución Mexicana", clave: "revolucion" },
+  { texto: "🍕 Las fracciones", clave: "fracciones" },
+  { texto: "💧 El ciclo del agua", clave: "ciclo del agua" },
+  { texto: "🌱 La fotosíntesis", clave: "fotosintesis" }
+];
+
+/* Saludos breves y conocidos, solo como muestra subtitulada */
+var MUESTRAS = {
+  "Náhuatl":  { frase: "Niltze", sig: "Hola", nota: "Saludo en náhuatl, como muestra del subtítulo de la primera escena." },
+  "Maya":     { frase: "Ba'ax ka wa'alik", sig: "Hola, ¿cómo estás?", nota: "Saludo en maya yucateco, como muestra del subtítulo de la primera escena." },
+  "Zapoteco": { frase: "Padiuxi", sig: "Hola", nota: "Saludo en zapoteco del Istmo, como muestra del subtítulo de la primera escena." }
+};
+
+/* Mini lecciones: pocas frases, bien dichas. Si no hay certeza, se avisa. */
+var LECCIONES = {
+  "Maya": {
+    variante: "Maya yucateco",
+    frases: [
+      { cat: "Saludo · ¿Cómo estás?", frase: "Ba'ax ka wa'alik", trad: "Hola, ¿cómo estás?", pron: "Se escucha: ba-ash ka wa-a-LIK." },
+      { cat: "Gracias", frase: "Dios bo'otik", trad: "Gracias", pron: "Se escucha: dios BO-o-tik." },
+      { cat: "Números 1 · 2 · 3", frase: "Hun · Ka' · Óox", trad: "Uno · dos · tres", pron: "Se escucha: jun · ka · oosh." },
+      { cat: "Despedida", frase: "Tak sáamal", trad: "Hasta mañana", pron: "Se escucha: tak SÁA-mal." }
+    ]
+  },
+  "Náhuatl": {
+    variante: "Náhuatl",
+    frases: [
+      { cat: "Saludo", frase: "Niltze", trad: "Hola", pron: "Se escucha: NIL-tse." },
+      { cat: "Gracias", frase: "Tlazohcamati", trad: "Gracias", pron: "Se escucha: tla-so-ka-MA-ti." },
+      { cat: "¿Cómo estás?", frase: "¿Quen tica?", trad: "¿Cómo estás?", pron: "Se escucha: ken TI-ka." },
+      { cat: "Números 1 · 2 · 3", frase: "Ce · Ome · Yei", trad: "Uno · dos · tres", pron: "Se escucha: se · O-me · yei." }
+    ]
+  },
+  "Zapoteco": {
+    variante: "Zapoteco del Istmo",
+    frases: [
+      { cat: "Saludo", frase: "Padiuxi", trad: "Hola", pron: "Se escucha: pa-DIU-shi." },
+      { cat: "Gracias", frase: "Quixhepe'", trad: "Gracias", pron: "Se escucha: ki-she-PE." },
+      { cat: "Números 1 · 2 · 3", frase: "Tobi · Chupa · Chonna", trad: "Uno · dos · tres", pron: "Se escucha: TO-bi · CHU-pa · CHO-na." }
+    ]
+  },
+  "Huichol (Wixárika)": {
+    variante: "Huichol (Wixárika)",
+    frases: [],
+    nota: "Esta mini lección se está preparando con hablantes de la comunidad wixárika, para cuidar que cada palabra quede bien dicha y con su pronunciación correcta. Preferimos esperar y hacerlo bien, antes que enseñarte algo a medias. Muy pronto estará aquí. 🪶"
+  },
+  "Inglés": {
+    variante: "Inglés",
+    frases: [
+      { cat: "Saludo", frase: "Hello", trad: "Hola", pron: "Se escucha: je-LÓU." },
+      { cat: "Gracias", frase: "Thank you", trad: "Gracias", pron: "Se escucha: zenk iú." },
+      { cat: "¿Cómo estás?", frase: "How are you?", trad: "¿Cómo estás?", pron: "Se escucha: jau ar iú." },
+      { cat: "Números 1 · 2 · 3", frase: "One · Two · Three", trad: "Uno · dos · tres", pron: "Se escucha: uán · tu · zri." },
+      { cat: "Presentación", frase: "My name is…", trad: "Me llamo…", pron: "Se escucha: mai néim is." },
+      { cat: "Por favor", frase: "Please", trad: "Por favor", pron: "Se escucha: pliis." },
+      { cat: "No entiendo", frase: "I don't understand", trad: "No entiendo", pron: "Se escucha: ai dóunt ander-STÁND." },
+      { cat: "Más despacio", frase: "Please, speak slowly", trad: "Por favor, habla despacio", pron: "Se escucha: pliis, spik SLÓU-li." },
+      { cat: "¿Dónde está…?", frase: "Where is the bathroom?", trad: "¿Dónde está el baño?", pron: "Se escucha: uér is da BÁZ-rum." },
+      { cat: "¿Cuánto cuesta?", frase: "How much does it cost?", trad: "¿Cuánto cuesta?", pron: "Se escucha: jau mach das it cóst." },
+      { cat: "Ayuda", frase: "Can you help me?", trad: "¿Me puedes ayudar?", pron: "Se escucha: can iú jelp mi." },
+      { cat: "En el trabajo", frase: "Be careful", trad: "Ten cuidado", pron: "Se escucha: bi KÉR-ful." },
+      { cat: "Despedida", frase: "Goodbye · See you later", trad: "Adiós · Hasta luego", pron: "Se escucha: gud-BÁI · si iú LÉI-ter." }
+    ]
+  }
+};
+</script>
+
+<script>
+"use strict";
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function cambiarModo(m){
+  document.getElementById("modoA").style.display = (m === "a") ? "" : "none";
+  document.getElementById("resultado").style.display = (m === "a" && window._reelListo) ? "" : "none";
+  document.getElementById("modoB").style.display = (m === "b") ? "" : "none";
+  document.getElementById("btnModoA").classList.toggle("activo", m === "a");
+  document.getElementById("btnModoB").classList.toggle("activo", m === "b");
+}
+function ponerTema(txt){
+  document.getElementById("tema").value = txt;
+  document.getElementById("tema").focus();
+}
+function renderChips(){
+  var c = document.getElementById("chips"), h = "";
+  CHIPS.forEach(function(ch){
+    h += '<button type="button" onclick="ponerTema(this.textContent.replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ]+/, \'\'))">' + esc(ch.texto) + "</button>";
+  });
+  c.innerHTML = h;
+}
+function buscarBanco(tema){
+  var t = " " + tema.toLowerCase() + " ";
+  if (t.indexOf("revoluci") >= 0) return BANCO["revolucion"];
+  if (t.indexOf("fraccion") >= 0 || t.indexOf("fracción") >= 0) return BANCO["fracciones"];
+  if (t.indexOf("ciclo del agua") >= 0 || t.indexOf("agua") >= 0) return BANCO["ciclo del agua"];
+  if (t.indexOf("fotos") >= 0) return BANCO["fotosintesis"];
+  return null;
+}
+function plantilla(tema, nivel){
+  var bonito = tema.charAt(0).toUpperCase() + tema.slice(1);
+  var t = tema.toLowerCase();
+  var desarrollo = (nivel === "primaria")
+    ? "Vamos por partes. Primero, busca dónde aparece " + t + " en tu casa, en tu calle o en tu comunidad: cuando un tema se conecta con tu vida, tu mente lo guarda mucho mejor. Después, ordénalo en pasos cortitos: qué es, para qué sirve y un ejemplo que tú mismo hayas visto. Y para cerrar, repítelo con tus propias palabras, como si se lo explicaras a un amigo."
+    : "Vamos por partes, con calma y con fondo. Primero, ubica el contexto: de dónde viene " + t + " y por qué importa en tu comunidad. Después, desarrolla la idea central en pasos ordenados, con un ejemplo concreto y un contraejemplo que aclare lo que no es. Al final, conecta el tema con otro que ya domines: las conexiones entre ideas son lo que convierte un dato suelto en conocimiento que se queda.";
+  return {
+    titulo: bonito,
+    gancho: "¿Sabías que " + t + " se entiende mucho más fácil de lo que parece? Quédate un momento y lo vas a ver con un ejemplo de tu propia vida.",
+    desarrollo: desarrollo,
+    cierre: "La idea central de hoy es sencilla: ningún tema es difícil si lo partes en pasos y lo conectas con lo que ya conoces.",
+    pregunta: (nivel === "primaria")
+      ? "¿Con qué ejemplo de tu vida diaria le explicarías este tema a un amigo?"
+      : "¿Cuál es la idea central del tema y cómo la defenderías con un ejemplo propio?",
+    puntos: [
+      "Conecta el tema con un ejemplo de tu vida diaria: así se recuerda mejor.",
+      "Parte el tema en pasos cortitos: qué es, para qué sirve y un ejemplo.",
+      "Explícalo con tus propias palabras: enseñar es la mejor forma de aprender."
+    ],
+    visual: [
+      "🖼️ En pantalla: el tema aparece en letras grandes sobre un paisaje mexicano al amanecer.",
+      "🖼️ En pantalla: un ejemplo de la vida diaria, paso a paso, con dibujos sencillos.",
+      "🖼️ En pantalla: signo de interrogación dorado y la pregunta de repaso en letras grandes."
+    ]
+  };
+}
+function generarLeccion(auto){
+  var tema = document.getElementById("tema").value.replace(/^\s+|\s+$/g, "");
+  var nivel = document.getElementById("nivel").value;
+  var idioma = document.getElementById("idiomaLeccion").value;
+  if (!tema){
+    alert("Escribe primero el tema o la materia de la lección, compa. Puede ser algo como: Los volcanes.");
+    document.getElementById("tema").focus();
+    return;
+  }
+  var datos = buscarBanco(tema);
+  var L = datos ? {
+      titulo: datos.titulo,
+      gancho: datos.gancho,
+      desarrollo: datos.desarrollo[nivel],
+      cierre: datos.cierre,
+      pregunta: datos.pregunta[nivel],
+      puntos: datos.puntos,
+      visual: datos.visual
+    } : plantilla(tema, nivel);
+
+  document.getElementById("resTitulo").textContent = "🎞️ Tu reel: " + L.titulo;
+  document.getElementById("resMeta").textContent =
+    "Nivel: " + (nivel === "primaria" ? "Primaria" : "Secundaria") +
+    " · Idioma de la lección: " + idioma +
+    " · Duración aprox.: 45 segundos · 3 escenas";
+  document.getElementById("vrTema").textContent = L.titulo;
+
+  var escenas = [
+    { n: "Escena 1", t: "🎯 El gancho", tiempo: "0:00 – 0:07", texto: L.gancho, visual: L.visual[0] },
+    { n: "Escena 2", t: "📖 El desarrollo", tiempo: "0:07 – 0:35", texto: L.desarrollo, visual: L.visual[1] },
+    { n: "Escena 3", t: "🔥 Cierre y pregunta de repaso", tiempo: "0:35 – 0:45", texto: L.cierre + " Y ahora, a pensar: " + L.pregunta, visual: L.visual[2] }
+  ];
+  var h = "";
+  escenas.forEach(function(e){
+    h += '<article class="escena"><div class="cab"><span class="num">' + e.n + '</span><h3>' + e.t + '</h3><span class="tiempo">⏱️ ' + e.tiempo + '</span></div>' +
+         "<p>“" + esc(e.texto) + "”</p>" +
+         '<p class="visual">' + esc(e.visual) + "</p></article>";
+  });
+  document.getElementById("escenas").innerHTML = h;
+
+  var bl = "";
+  if (idioma === "Español"){
+    bl = '<div class="muestra"><span class="frase">Guion completo en español</span>' +
+         "<small>Listo para narrarse tal cual, escena por escena, con voz clara y sin prisas.</small></div>";
+  } else if (MUESTRAS[idioma]){
+    var m = MUESTRAS[idioma];
+    bl = '<div class="muestra"><small style="margin:0 0 4px;font-weight:900;letter-spacing:.5px;">SUBTÍTULO DE MUESTRA EN ' + esc(idioma.toUpperCase()) + '</small>' +
+         '<span class="frase">“' + esc(m.frase) + "” — " + esc(m.sig) + "</span>" +
+         "<small>" + esc(m.nota) + " El guion completo va arriba, en español, listo para grabarse también en esta lengua.</small></div>";
+  } else {
+    bl = '<div class="nota-lengua">🌱 <strong>Guion completo en ' + esc(idioma) + ": en preparación.</strong> " +
+         "Arriba tienes el guion completo en español. La versión entera en esta lengua se prepara con hablantes de la comunidad, para que cada palabra quede bien dicha.</div>";
+  }
+  document.getElementById("bloqueLengua").innerHTML = bl;
+
+  var rp = "<h3>🎴 Tarjeta de repaso — lo que sí te tienes que llevar</h3><ul>";
+  L.puntos.forEach(function(p){ rp += "<li>" + esc(p) + "</li>"; });
+  rp += '</ul><div class="pregunta">❓ <strong>Pregunta de repaso:</strong> ' + esc(L.pregunta) + "</div>";
+  document.getElementById("repaso").innerHTML = rp;
+
+  window._reelListo = true;
+  var res = document.getElementById("resultado");
+  res.style.display = "";
+  if (!auto) res.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function escucharFrase(i){
+  var L = LECCIONES[window._idiomaActual || "Inglés"];
+  if (!L || !L.frases[i]) return;
+  if (!("speechSynthesis" in window)){ alert("Tu navegador no trae voz para escuchar las frases. Ábrelo en Chrome."); return; }
+  try {
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(String(L.frases[i].frase).replace(/·/g, ","));
+    u.lang = "en-US"; u.rate = 0.92;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+function generarIdioma(){
+  var idioma = document.getElementById("idiomaAprender").value;
+  window._idiomaActual = idioma;
+  var L = LECCIONES[idioma];
+  var out = document.getElementById("salidaIdioma");
+  if (!L){ out.innerHTML = ""; return; }
+  var h = '<h3 style="margin-top:18px;color:var(--jade);font-size:19px;">📚 Mini lección de ' + esc(idioma) + ' <span style="color:var(--suave);font-size:14px;">(' + esc(L.variante) + ")</span></h3>";
+  if (!L.frases.length){
+    h += '<div class="nota-lengua" style="margin-top:12px;">' + esc(L.nota) + "</div>";
+  } else {
+    h += '<div class="frases">';
+    L.frases.forEach(function(f, i){
+      h += '<div class="frase-card"><div class="cat">' + esc(f.cat) + '</div>' +
+           '<div class="f">' + esc(f.frase) + "</div>" +
+           '<div class="t"><span class="traducible">' + esc(f.trad) + '</span></div>' +
+           '<div class="p">🔊 ' + esc(f.pron) + "</div>" +
+           ((idioma === "Inglés") ? '<button type="button" class="btn-oir" onclick="escucharFrase(' + i + ')">🔊 Escuchar</button>' : "") +
+           "</div>";
+    });
+    h += "</div>";
+    if (idioma === "Inglés"){
+      h += '<p style="margin-top:12px;font-size:14px;color:var(--suave);font-family:Verdana,sans-serif;">Pícale a «Escuchar» en cada tarjeta, óyela con calma y repítela en voz alta tres veces. Luego enciende el modo practicar y trata de recordar cada significado sin verlo. 💪</p>';
+    } else {
+      h += '<p style="margin-top:12px;font-size:14px;color:var(--suave);font-family:Verdana,sans-serif;">Repítelas en voz alta tres veces. Luego enciende el modo practicar y trata de recordar cada significado sin verlo. 💪</p>';
+      h += '<div class="nota-lengua" style="margin-top:10px;">🔊 <strong>El audio de esta lengua no lo hace una computadora.</strong> No existen voces de computadora para las lenguas de México, y una voz inventada enseñaría mal los sonidos. En la versión completa, el audio lo graban hablantes de la comunidad, como se habla de verdad. Por ahora, guía tu oído con la pronunciación escrita de cada tarjeta.</div>';
+    }
+  }
+  out.innerHTML = h;
+}
+renderChips();
+generarLeccion(true);
+generarIdioma();
+</script>
+</body>
+</html>
