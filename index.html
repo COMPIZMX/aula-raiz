@@ -80,6 +80,7 @@
   .btn-reel[disabled]{opacity:.45; cursor:default;}
   .escena.leyendo{border-color:var(--jade); box-shadow:0 0 0 3px rgba(201,162,39,.45);}
   #videoSalida{margin-top:12px;}
+  #arteReel img{border:2px solid var(--borde);}
   #videoSalida video, #videoSalida canvas{width:270px; max-width:100%; border-radius:16px; background:#07271c; display:block;}
   #videoSalida .estado{font-family:Verdana,sans-serif; font-size:14px; color:var(--jade2); margin:8px 0; font-weight:700;}
   #videoSalida a.btn-reel{display:inline-block; text-decoration:none; margin-top:8px;}
@@ -207,6 +208,7 @@
       <button type="button" class="btn-reel" id="btnVideo" onclick="crearVideoReel()">🎬 Crear video del reel</button>
       <button type="button" class="btn-reel secundario" id="btnDetener" onclick="detenerTodo()" style="display:none">⏹️ Detener</button>
     </div>
+    <div id="arteReel"></div>
     <div id="videoSalida"></div>
     <div class="reel-caja">
       <div class="vista-reel" aria-hidden="true">
@@ -570,6 +572,7 @@ function pintarDesdeAPI(j, nivel, idioma, auto){
   rp += '</ul><div class="pregunta">❓ <strong>Pregunta de repaso:</strong> ' + esc(L.pregunta) + "</div>";
   document.getElementById("repaso").innerHTML = rp;
 
+  pedirArte(document.getElementById("tema").value.replace(/^\s+|\s+$/g, ""), (L.visual && L.visual[0]) || "");
   window._reelListo = true;
   var res = document.getElementById("resultado");
   res.style.display = "";
@@ -637,6 +640,7 @@ function generarLeccionLocal(auto){
   rp += '</ul><div class="pregunta">❓ <strong>Pregunta de repaso:</strong> ' + esc(L.pregunta) + "</div>";
   document.getElementById("repaso").innerHTML = rp;
 
+  pedirArte(document.getElementById("tema").value.replace(/^\s+|\s+$/g, ""), (L.visual && L.visual[0]) || "");
   window._reelListo = true;
   var res = document.getElementById("resultado");
   res.style.display = "";
@@ -705,12 +709,21 @@ function _dibujarReel(ctx, W, H, datos, t, total){
   ctx.save();
   if (seg.tipo === "portada"){
     ctx.globalAlpha = Math.min(1, p * 2.5);
+    var baseY = 470;
+    if (datos.arte){
+      _cubrir(ctx, datos.arte, W, H);
+      var vg = ctx.createLinearGradient(0, H * 0.42, 0, H);
+      vg.addColorStop(0, "rgba(7,39,28,0)"); vg.addColorStop(1, "rgba(7,39,28,.93)");
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      baseY = 880;
+    }
     ctx.fillStyle = "#f7f0dc"; ctx.font = "900 47px Verdana, sans-serif";
     var lt = _envolver(ctx, datos.titulo, W - 120);
-    lt.forEach(function(l, i){ ctx.fillText(l, W / 2, 470 + i * 58); });
+    lt.forEach(function(l, i){ ctx.fillText(l, W / 2, baseY + i * 58); });
     ctx.fillStyle = "#c9a227"; ctx.font = "700 27px Verdana, sans-serif";
-    ctx.fillText("Reel de lección · generado con Muse Spark", W / 2, 470 + lt.length * 58 + 56);
+    ctx.fillText("Reel de lección · generado con Muse Spark", W / 2, baseY + lt.length * 58 + 56);
   } else if (seg.tipo === "escena"){
+    if (datos.arte){ _cubrir(ctx, datos.arte, W, H); ctx.fillStyle = "rgba(7,39,28,.80)"; ctx.fillRect(0, 0, W, H); }
     ctx.fillStyle = "#c9a227";
     if (ctx.roundRect){ ctx.beginPath(); ctx.roundRect(W / 2 - 210, 150, 420, 54, 27); ctx.fill(); }
     ctx.fillStyle = "#07271c"; ctx.font = "900 25px Verdana, sans-serif";
@@ -806,7 +819,7 @@ function crearVideoReel(){
     if (!window._grabando) return;
     if (inicio === null) inicio = ts;
     var t = (ts - inicio) / 1000;
-    _dibujarReel(ctx, 720, 1280, { titulo: datos.titulo, escenas: datos.escenas, pregunta: datos.pregunta || "" }, t, total);
+    _dibujarReel(ctx, 720, 1280, { titulo: datos.titulo, escenas: datos.escenas, pregunta: datos.pregunta || "", arte: window._arteActual || null }, t, total);
     if (t < total) requestAnimationFrame(marco);
     else detenerGrabacion();
   }
@@ -834,6 +847,36 @@ function _finalizarVideo(){
     '<video controls playsinline src="' + url + '"></video>' +
     '<a class="btn-reel" href="' + url + '" download="aula-raiz-reel.' + ext + '">⬇️ Descargar el video</a>';
   salida.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+var _arteTema = "";
+function pedirArte(tema, visual){
+  visual = String(visual || "").replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ]+/, "").replace(/^En pantalla:\s*/i, "");
+  var clave = (tema || "") + "|" + visual;
+  if (clave === _arteTema) return;
+  _arteTema = clave;
+  window._arteActual = null;
+  var caja = document.getElementById("arteReel");
+  if (!tema || tema.replace(/\s+/g, "").length < 3){ if (caja) caja.innerHTML = ""; return; }
+  if (caja) caja.innerHTML = '<p class="ayuda">🎨 Generando el arte de tu reel con Muse Image…</p>';
+  var img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = function(){
+    window._arteActual = img;
+    if (caja){
+      caja.innerHTML = '<p class="ayuda">🎨 El arte de tu reel — generado con Muse Image (Meta Model API)</p>';
+      img.style.width = "100%"; img.style.maxWidth = "340px"; img.style.borderRadius = "16px"; img.style.display = "block";
+      caja.appendChild(img);
+    }
+  };
+  img.onerror = function(){ window._arteActual = null; if (caja) caja.innerHTML = ""; };
+  img.src = "https://aula-api.compizmx.com/imagen?tema=" + encodeURIComponent(tema) + "&visual=" + encodeURIComponent(visual);
+}
+function _cubrir(ctx, img, W, H){
+  var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+  var s = Math.max(W / iw, H / ih), w = iw * s, h = ih * s;
+  ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
 }
 function escucharFrase(i){
   var L = LECCIONES[window._idiomaActual || "Inglés"];
