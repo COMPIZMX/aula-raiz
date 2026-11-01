@@ -81,6 +81,17 @@
   .escena.leyendo{border-color:var(--jade); box-shadow:0 0 0 3px rgba(201,162,39,.45);}
   #videoSalida{margin-top:12px;}
   #arteReel img{border:2px solid var(--borde);}
+  #presentacion{position:fixed; inset:0; z-index:60; background:#07271c; color:#f7f0dc; display:none; overflow:hidden; cursor:pointer}
+  #presentacion.on{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:5vmin}
+  #presentacion .fondo{position:absolute; inset:0; background-size:cover; background-position:center; opacity:.28}
+  #presentacion .cuerpo{position:relative; max-width:1150px}
+  #presentacion h1{font-size:clamp(34px,7vmin,84px); line-height:1.08; margin:0 0 2vmin}
+  #presentacion .txt{font-size:clamp(22px,4.2vmin,46px); line-height:1.38}
+  #presentacion .chip{display:inline-block; background:#c9a227; color:#07271c; font-weight:900; border-radius:999px; padding:.35em 1.1em; font-size:clamp(15px,2.4vmin,24px); margin-bottom:2.5vmin}
+  #presentacion ul{text-align:left; font-size:clamp(20px,3.6vmin,40px); line-height:1.55; margin:0; padding-left:1.2em}
+  #presCerrar{position:absolute; top:12px; right:14px; z-index:2; background:rgba(0,0,0,.45); color:#f7f0dc; border:1px solid #c9a227; border-radius:999px; width:46px; height:46px; font-size:20px; cursor:pointer}
+  #presProg{position:absolute; left:0; bottom:0; height:6px; background:#c9a227; width:0%; z-index:2}
+  #presentacion .pie{position:absolute; bottom:16px; left:0; right:0; text-align:center; font-size:13px; opacity:.65}
   #videoSalida video, #videoSalida canvas{width:270px; max-width:100%; border-radius:16px; background:#07271c; display:block;}
   #videoSalida .estado{font-family:Verdana,sans-serif; font-size:14px; color:var(--jade2); margin:8px 0; font-weight:700;}
   #videoSalida a.btn-reel{display:inline-block; text-decoration:none; margin-top:8px;}
@@ -206,6 +217,7 @@
     <div class="acciones-reel">
       <button type="button" class="btn-reel" id="btnEscuchar" onclick="escucharReel()">▶️ Escuchar el reel</button>
       <button type="button" class="btn-reel" id="btnVideo" onclick="crearVideoReel()">🎬 Crear video del reel</button>
+      <button type="button" class="btn-reel" onclick="presentarReel()">📺 Presentar en TV</button>
       <button type="button" class="btn-reel secundario" id="btnDetener" onclick="detenerTodo()" style="display:none">⏹️ Detener</button>
     </div>
     <div id="arteReel"></div>
@@ -554,7 +566,7 @@ function pintarDesdeAPI(j, nivel, idioma, auto){
          '<p class="visual">' + esc(e.visual) + "</p></article>";
   });
   document.getElementById("escenas").innerHTML = h;
-  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta };
+  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta, repaso: L.puntos };
 
   var bl = "";
   if (idioma === "Español"){
@@ -618,7 +630,7 @@ function generarLeccionLocal(auto){
          '<p class="visual">' + esc(e.visual) + "</p></article>";
   });
   document.getElementById("escenas").innerHTML = h;
-  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta };
+  window._leccionActual = { titulo: L.titulo, escenas: escenas, pregunta: L.pregunta, repaso: L.puntos };
 
   var bl = "";
   if (idioma === "Español"){
@@ -878,6 +890,74 @@ function _cubrir(ctx, img, W, H){
   var s = Math.max(W / iw, H / ih), w = iw * s, h = ih * s;
   ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
 }
+
+var _pres = null;
+function presentarReel(){
+  var d = window._leccionActual;
+  if (!d || !d.escenas || !d.escenas.length){ alert("Primero genera una lección."); return; }
+  detenerTodo();
+  var slides = [{ t: "portada", titulo: d.titulo, hablar: d.titulo }];
+  d.escenas.forEach(function(e, i){ var tx = (e && e.texto) || String(e); slides.push({ t: "escena", n: i + 1, de: d.escenas.length, texto: tx, hablar: tx }); });
+  if (d.repaso && d.repaso.length) slides.push({ t: "repaso", puntos: d.repaso, hablar: "Repaso rápido. " + d.repaso.join(". ") });
+  if (d.pregunta) slides.push({ t: "pregunta", texto: d.pregunta, hablar: "Pregunta de repaso: " + d.pregunta });
+  slides.push({ t: "fin", hablar: "" });
+  _pres = { slides: slides, i: -1, timer: null, token: 0, musica: null };
+  var ov = document.getElementById("presentacion");
+  var fondo = document.getElementById("presFondo");
+  if (window._arteActual && window._arteActual.src) fondo.style.backgroundImage = 'url("' + window._arteActual.src + '")';
+  else fondo.style.backgroundImage = "";
+  ov.className = "on";
+  try { var p = ov.requestFullscreen && ov.requestFullscreen(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+  try {
+    var ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+    _pres.musica = { ctx: ac, parar: _musica(ac, ac.destination) };
+  } catch (e) {}
+  _presIr(0);
+}
+function _presIr(i){
+  if (!_pres) return;
+  if (i >= _pres.slides.length){ detenerPresentacion(); return; }
+  _pres.i = i; _pres.token++;
+  var token = _pres.token, s = _pres.slides[i], cuerpo = document.getElementById("presCuerpo");
+  if (s.t === "portada") cuerpo.innerHTML = '<p class="chip">🪶 AULA RAÍZ</p><h1></h1><p class="txt">Reel de lección · generado con Muse Spark</p>';
+  else if (s.t === "escena") cuerpo.innerHTML = '<p class="chip">Escena ' + s.n + ' de ' + s.de + '</p><p class="txt"></p>';
+  else if (s.t === "repaso") cuerpo.innerHTML = '<p class="chip">📋 Repaso exprés</p><ul>' + s.puntos.map(function(){ return '<li></li>'; }).join("") + '</ul>';
+  else if (s.t === "pregunta") cuerpo.innerHTML = '<p class="chip">❓ Pregunta de repaso</p><p class="txt"></p>';
+  else cuerpo.innerHTML = '<h1>🪶 ¡A practicar!</h1><p class="txt">Aula Raíz — cada tema, un reel en tu lengua.</p>';
+  if (s.t === "portada") cuerpo.querySelector("h1").textContent = s.titulo;
+  if (s.t === "escena" || s.t === "pregunta") cuerpo.querySelector(".txt").textContent = s.texto;
+  if (s.t === "repaso"){ var lis = cuerpo.querySelectorAll("li"); s.puntos.forEach(function(x, k){ if (lis[k]) lis[k].textContent = x; }); }
+  document.getElementById("presProg").style.width = Math.round((i + 1) / _pres.slides.length * 100) + "%";
+  if (_pres.timer) clearTimeout(_pres.timer);
+  var avanzo = false;
+  var sigue = function(){ if (avanzo || !_pres || _pres.token !== token) return; avanzo = true; _presIr(i + 1); };
+  _pres.timer = setTimeout(sigue, Math.max(4500, (s.hablar || "").length * 110));
+  if (s.hablar && "speechSynthesis" in window){
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(s.hablar);
+      u.lang = "es-MX"; u.rate = 1.0;
+      u.onend = function(){ setTimeout(sigue, 650); };
+      u.onerror = function(){};
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+function _presSiguiente(){ if (_pres) _presIr(_pres.i + 1); }
+function _presToca(ev){ if (ev && ev.target && ev.target.id === "presCerrar") return; _presSiguiente(); }
+function detenerPresentacion(){
+  if (_pres){
+    _pres.token++;
+    if (_pres.timer) clearTimeout(_pres.timer);
+    if (_pres.musica){ try { _pres.musica.parar(); } catch (e) {} try { _pres.musica.ctx.close(); } catch (e) {} }
+    _pres = null;
+  }
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) {}
+  var ov = document.getElementById("presentacion");
+  if (ov) ov.className = "";
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+}
 function escucharFrase(i){
   var L = LECCIONES[window._idiomaActual || "Inglés"];
   if (!L || !L.frases[i]) return;
@@ -922,5 +1002,12 @@ renderChips();
 generarLeccion(true);
 generarIdioma();
 </script>
+<div id="presentacion" onclick="_presToca(event)">
+  <div class="fondo" id="presFondo"></div>
+  <button id="presCerrar" onclick="detenerPresentacion(); event.stopPropagation();" aria-label="Cerrar">✕</button>
+  <div class="cuerpo" id="presCuerpo"></div>
+  <div class="pie">Aula Raíz · toca para avanzar · ✕ para salir</div>
+  <div id="presProg"></div>
+</div>
 </body>
 </html>
